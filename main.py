@@ -110,34 +110,39 @@ def is_binary_complex_formula(formula):
         return False
 
 
+def build_truth_table(formula:str, vars:list)->list:
+    """
+    Построение таблицы истинности
+    """
+    truth_table = []
+    for index in range(2 ** len(vars)):
+        binary_number = bin(index)[2::]
+        # print(binary_number)
+        if len(binary_number) != len(vars):
+            truth_table_row = [0 for x in range(len(vars)-len(binary_number))]
+            truth_table_row.append(int(binary_number))
+            truth_table.append(truth_table_row)
+            # print(truth_table_row)
+        else:
+            truth_table_row = [int(x) for x in str(binary_number)]
+            truth_table.append(truth_table_row)
+    print(truth_table)
+
+
+
 def modify_formula(formula:str):
     new_formula = ''
+    vars = []
     for index in range(0,len(formula)):
         if formula[index] == '(' or formula[index] == ')':
             new_formula += formula[index]
         elif formula[index] == 'v' or formula[index] == '^' or formula[index] == '!' or formula[index] == '-':
             new_formula += formula[index]
+        else:
+            vars.append(formula[index])
 
 
-# unary complex | binary complex
-def is_complex_formula(formula):
-    if is_unary_complex_formula(formula):
-        return True
-    elif is_binary_complex_formula(formula):
-        return True
-    else:
-        return False
 
-
-def is_formula(formula):
-    if is_logical_const(formula):
-        return True
-    elif is_atomic_formula(formula):
-        return True
-    elif is_complex_formula(formula):
-        return True
-    else:
-        return False
 
 
 def is_logical_formula(formula: str)->bool:
@@ -146,7 +151,8 @@ def is_logical_formula(formula: str)->bool:
     """
     if brackets_count(formula) and is_correct_operator(formula) and ' ' not in formula and symbol_is_not_alone_in_brackets(formula):
         print('Формула введена верно')
-        formula.replace('\/', 'v').replace('/\\', '^')
+        formula = formula.replace('\/', 'v').replace('/\\', '^').replace('->', '>')
+        print(formula)
         return True
     else:
         print('Ошибка ввода формулы')
@@ -162,3 +168,4 @@ if __name__ == '__main__':
     formula = input('Введите формулу: ')
     # print(is_logical_formula(formula))
     is_logical_formula(formula)
+    build_truth_table(formula, ['P','Q'])
