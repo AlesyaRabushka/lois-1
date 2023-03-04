@@ -43,16 +43,11 @@ def is_correct_operator(formula:str)->bool:
         print('here')
         return True
     else:
-        flag = False
-        for index in range(len(formula)):
-            if (formula[index] == '\\' and formula[index + 1] == '/') or (formula[index] == '/' and formula[index + 1] == '\\') or (formula[index] == '-' and formula[index + 1] == '>'):
-                flag = True
-            elif formula[index] == '!':
-                flag = True
-            elif (formula[index - 1] == '\\' and formula[index] == '/') or (formula[index - 1] == '/' and formula[index] == '\\') or (formula[index - 1] == '-' and formula[index] == '>'):
-                flag = True
-
-        return flag
+        new_formula = formula.replace('\/', 'v').replace('/\\', '^')
+        if '\\' in new_formula or '/' in new_formula:
+            return False
+        else:
+            return True
 
 
 
