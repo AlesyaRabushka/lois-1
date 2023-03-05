@@ -15,15 +15,22 @@ def is_logical_const(formula):
 
 
 # латинская заглавная
-def is_atomic_formula(formula: str) -> bool:
+def is_correct_formula(formula: str) -> bool:
     """
-    Проверяет, что формула является атомарной
+    Проверяет наличие недопустимых символов
     """
-    latin_alphabet = 'abcdeffghijklmnopqrstuvwxxyz'
-    if formula in latin_alphabet.upper():
-        return True
+    if len(formula) == 1:
+        latin_alphabet = 'abcdeffghijklmnopqrstuvwxxyz'
+        if formula in latin_alphabet.upper():
+            return True
+        else:
+            return False
     else:
-        return False
+        for symbol in formula:
+            if symbol in '{}_=<@#$%^&*.,?|+':
+                return False
+        return True
+
 
 
 def symbol_is_not_alone_in_brackets(formula: str) -> bool:
@@ -31,7 +38,7 @@ def symbol_is_not_alone_in_brackets(formula: str) -> bool:
     Проевряет, что атомарная формула указана без скобок
     """
     for symbol_index in range(0, len(formula)):
-        if formula[symbol_index] == '(' and is_atomic_formula(formula[symbol_index + 1]) and formula[symbol_index + 2] == ')':
+        if formula[symbol_index] == '(' and is_correct_formula(formula[symbol_index + 1]) and formula[symbol_index + 2] == ')':
             return False
     return True
 
@@ -39,7 +46,7 @@ def is_correct_operator(formula:str)->bool:
     """
     Проверяет, верно ли ввелены все бинарные операторы
     """
-    if is_atomic_formula(formula):
+    if is_correct_formula(formula):
         print('here')
         return True
     else:
@@ -97,7 +104,7 @@ def is_binary_complex_formula(formula):
                         else:
                             print('it is not binary complex')
                         second_formula = formula[index + 2:len(formula)-1]
-                        print(first_formula, second_formula)
+                        # print(first_formula, second_formula)
                     elif formula[index] == '/' and formula[index + 1] == '\\':
                         print('/\ ')
                     elif formula[index] == '-' and formula[index + 1] == '>':
@@ -119,27 +126,96 @@ def build_truth_table(formula:str, vars:list)->list:
         binary_number = bin(index)[2::]
         # print(binary_number)
         if len(binary_number) != len(vars):
-            truth_table_row = [0 for x in range(len(vars)-len(binary_number))]
-            truth_table_row.append(int(binary_number))
+            truth_table_row = '0'*(len(vars)-len(binary_number))+binary_number
+
             truth_table.append(truth_table_row)
             # print(truth_table_row)
         else:
-            truth_table_row = [int(x) for x in str(binary_number)]
-            truth_table.append(truth_table_row)
-    print(truth_table)
+            truth_table.append(binary_number)
+
+    truth_table_result = []
+
+    for truth_table_row in truth_table:
+        buf_formula = formula
+        for symbol in formula:
+            if symbol in vars:
+                buf_formula = buf_formula.replace(symbol, truth_table_row[vars.index(symbol)])
+
+        # print(buf_formula)
+        truth_table_result.append(eval(buf_formula))
+    # print(truth_table_result)
+    return truth_table, truth_table_result
 
 
 
-def modify_formula(formula:str):
+def modify_formula(formula:str)->str:
+    """
+    Преобразует формулу в вид, необходимый для произведения вычислений
+    """
     new_formula = ''
     vars = []
-    for index in range(0,len(formula)):
-        if formula[index] == '(' or formula[index] == ')':
-            new_formula += formula[index]
-        elif formula[index] == 'v' or formula[index] == '^' or formula[index] == '!' or formula[index] == '-':
-            new_formula += formula[index]
+    for symbol in formula:
+        if symbol not in 'v^>~!()':
+            if symbol not in vars:
+                vars.append(symbol)
+            new_formula += symbol
+        elif symbol == '(' or symbol == ')':
+            new_formula += symbol
+        elif symbol == '!':
+            new_formula += ' not '
+        elif symbol == '^':
+            new_formula += ' and '
+        elif symbol == 'v':
+            new_formula += ' or '
+        elif symbol == '~':
+            new_formula += ' == '
+        elif symbol == '>':
+            new_formula += ' <= '
+
+    return new_formula, vars
+
+
+
+def build_pdnf(formula:str):
+    formula, vars = modify_formula(formula)
+    truth_table, truth_table_result = build_truth_table(formula, vars)
+    pdnf_formula = '('
+    pdnf_formulas_list = []
+    truth_table_pdnf = []
+
+    for index in range(len(truth_table_result)):
+        if truth_table_result[index] == 1:
+            truth_table_pdnf.append(truth_table[index])
+    # print(truth_table)
+    # print(truth_table_pdnf)
+
+    for expression in truth_table_pdnf:
+        pdnf_formula_expression = []
+        for value_index in range(len(expression)):
+            if expression[value_index] == '0':
+                pdnf_formula_expression.append(f'(!{vars[value_index]})')
+            else:
+                pdnf_formula_expression.append(f'{vars[value_index]}')
+
+        pdnf_formulas_list.append(pdnf_formula_expression)
+        print(pdnf_formula_expression)
+    # print(pdnf_formulas_list)
+
+    for expression in pdnf_formulas_list:
+        if pdnf_formulas_list.index(expression) == len(pdnf_formulas_list)-1:
+            for value in expression:
+                if expression.index(value) == len(expression)-1:
+                    pdnf_formula += f'{value}))'
+                else:
+                    pdnf_formula += f'({value}/\\'
         else:
-            vars.append(formula[index])
+            for value in expression:
+                if expression.index(value) == len(expression)-1:
+                    pdnf_formula += f'{value})\/'
+                else:
+                    pdnf_formula += f'({value}/\\'
+
+    return pdnf_formula
 
 
 
@@ -149,14 +225,15 @@ def is_logical_formula(formula: str)->bool:
     """
     Проверяет, правильно ли введена формула
     """
-    if brackets_count(formula) and is_correct_operator(formula) and ' ' not in formula and symbol_is_not_alone_in_brackets(formula):
+    if is_correct_formula(formula) and brackets_count(formula) and is_correct_operator(formula) and ' ' not in formula and symbol_is_not_alone_in_brackets(formula):
         print('Формула введена верно')
         formula = formula.replace('\/', 'v').replace('/\\', '^').replace('->', '>')
         print(formula)
-        return True
+        print(build_pdnf(formula))
+        raise SystemExit
     else:
-        print('Ошибка ввода формулы')
-        return False
+        print('Ошибка ввода формулы\n')
+
 
 
 
@@ -165,7 +242,7 @@ def is_logical_formula(formula: str)->bool:
 
 
 if __name__ == '__main__':
-    formula = input('Введите формулу: ')
-    # print(is_logical_formula(formula))
-    is_logical_formula(formula)
-    build_truth_table(formula, ['P','Q'])
+    while True:
+        formula = input('Введите формулу: ')
+        # print(is_logical_formula(formula))
+        is_logical_formula(formula)
