@@ -240,14 +240,18 @@ def compare(sdnf, formula):
     else:
         return 'Формула является СДНФ'
 
+
+
+
+
 #(((!P)/\Q)\/(P/\(!Q))\/(Q/\P))
-
-
-
-
+#(((!P)/\Q)\/(P/\(!Q))\/((!Q)/\(!P)))
 if __name__ == '__main__':
     formula = input('Введите СДНФ формулу:    ')
     # print(is_logical_formula(formula))
-    sdnf = is_logical_formula(formula)
-    print('Полученная СДНФ формула:',sdnf)
-    print(compare(sdnf, formula))
+    try:
+        sdnf = is_logical_formula(formula)
+        print('Полученная СДНФ формула:', sdnf)
+        print(compare(sdnf, formula))
+    except:
+        raise SystemExit
