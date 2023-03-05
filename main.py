@@ -5,30 +5,26 @@
 
 
 
-# 0 или 1
-def is_logical_const(formula):
-    if formula == '0' or formula == '1':
-        return True
-    return False
-
-
-
 
 # латинская заглавная
 def is_correct_formula(formula: str) -> bool:
     """
     Проверяет наличие недопустимых символов
     """
+    latin_alphabet = 'abcdeffghijklmnopqrstuvwxxyz'
     if len(formula) == 1:
-        latin_alphabet = 'abcdeffghijklmnopqrstuvwxxyz'
         if formula in latin_alphabet.upper():
             return True
         else:
             return False
     else:
+        flag = False
         for symbol in formula:
-            if symbol in '{}_=<@#$%^&*.,?|+':
+            if symbol in '{}_=<@#$%^&*.,?|+0123456789':
                 return False
+            if symbol in latin_alphabet:
+                return False
+
         return True
 
 
@@ -42,19 +38,17 @@ def symbol_is_not_alone_in_brackets(formula: str) -> bool:
             return False
     return True
 
+
 def is_correct_operator(formula:str)->bool:
     """
     Проверяет, верно ли ввелены все бинарные операторы
     """
-    if is_correct_formula(formula):
+    new_formula = formula.replace('\/', 'v').replace('/\\', '^')
+    if '\\' in new_formula or '/' in new_formula:
         print('here')
-        return True
+        return False
     else:
-        new_formula = formula.replace('\/', 'v').replace('/\\', '^')
-        if '\\' in new_formula or '/' in new_formula:
-            return False
-        else:
-            return True
+        return True
 
 
 
@@ -83,38 +77,13 @@ def brackets_count(formula:str) -> bool:
             right_bracket_count += 1;
     if left_bracket_count == right_bracket_count:
         return True
+    elif left_bracket_count == 0 or right_bracket_count == 0 and len(formula) == 1:
+        return True
     else:
         return False
 
 
 
-def is_binary_complex_formula(formula):
-    left_brackets_count, right_brackets_count = brackets_count(formula)
-    if left_brackets_count == right_brackets_count:
-        if formula[0] == '(' and formula[len(formula)-1] == ')':
-            count(formula)
-            if is_binary_complex_formula(formula[1:len(formula)-1]):
-                pass
-            else:
-                for index in range(1, len(formula)-1):
-                    if formula[index] == '\\' and formula[index + 1] == '/':
-                        first_formula = formula[1:index]
-                        if is_binary_complex_formula(first_formula):
-                            print('it is binary complex')
-                        else:
-                            print('it is not binary complex')
-                        second_formula = formula[index + 2:len(formula)-1]
-                        # print(first_formula, second_formula)
-                    elif formula[index] == '/' and formula[index + 1] == '\\':
-                        print('/\ ')
-                    elif formula[index] == '-' and formula[index + 1] == '>':
-                        print('->')
-                    elif formula[index] == '~':
-                        print('~')
-        else:
-            return False
-    else:
-        return False
 
 
 def build_truth_table(formula:str, vars:list)->list:
@@ -142,7 +111,11 @@ def build_truth_table(formula:str, vars:list)->list:
                 buf_formula = buf_formula.replace(symbol, truth_table_row[vars.index(symbol)])
 
         # print(buf_formula)
-        truth_table_result.append(eval(buf_formula))
+        try:
+            truth_table_result.append(eval(buf_formula))
+        except:
+            print('Неверный формат формулы')
+            raise SystemExit
     # print(truth_table_result)
     return truth_table, truth_table_result
 
@@ -198,7 +171,7 @@ def build_pdnf(formula:str):
                 pdnf_formula_expression.append(f'{vars[value_index]}')
 
         pdnf_formulas_list.append(pdnf_formula_expression)
-        print(pdnf_formula_expression)
+        # print(pdnf_formula_expression)
     # print(pdnf_formulas_list)
 
     for expression in pdnf_formulas_list:
@@ -226,23 +199,55 @@ def is_logical_formula(formula: str)->bool:
     Проверяет, правильно ли введена формула
     """
     if is_correct_formula(formula) and brackets_count(formula) and is_correct_operator(formula) and ' ' not in formula and symbol_is_not_alone_in_brackets(formula):
-        print('Формула введена верно')
         formula = formula.replace('\/', 'v').replace('/\\', '^').replace('->', '>')
-        print(formula)
-        print(build_pdnf(formula))
-        raise SystemExit
+        # print(formula)
+        pdnf = build_pdnf(formula)
+        return pdnf
+
     else:
         print('Ошибка ввода формулы\n')
 
 
 
+def compare(sdnf, formula):
+    """
+    Сравнивает полученную формулу СДНФ и введенную пользователем формулу
+    """
+    sdnf = sdnf.replace('(', '').replace(')', '').replace('/\\', '^').replace('\/', 'v')
+    sdnf_expressions = sdnf.split('v')
+    sdnf_symbols = []
+    for expression in sdnf_expressions:
+        sdnf_symbols.append(expression.split('^'))
+    # print(sdnf_symbols)
 
+    formula = formula.replace('(','').replace(')','').replace('/\\','^').replace('\/', 'v')
+    formula_expressions = formula.split('v')
+    formula_symbols = []
+    for expression in formula_expressions:
+        formula_symbols.append(expression.split('^'))
+    # print(formula_symbols)
+
+    # [item in b for item in a]
+    compare_list = []
+    for sdnf_pare in sdnf_symbols:
+        for formula_pare in formula_symbols:
+            for item in sdnf_pare:
+                if item in formula_pare:
+                    compare_list.append(True)
+
+    if False in compare_list:
+        return 'Формула не является СДНФ'
+    else:
+        return 'Формула является СДНФ'
+
+#(((!P)/\Q)\/(P/\(!Q))\/(Q/\P))
 
 
 
 
 if __name__ == '__main__':
-    while True:
-        formula = input('Введите формулу: ')
-        # print(is_logical_formula(formula))
-        is_logical_formula(formula)
+    formula = input('Введите СДНФ формулу:    ')
+    # print(is_logical_formula(formula))
+    sdnf = is_logical_formula(formula)
+    print('Полученная СДНФ формула:',sdnf)
+    print(compare(sdnf, formula))
