@@ -38,6 +38,7 @@ def symbol_is_not_alone_in_brackets(formula: str) -> bool:
             return False
         elif formula[symbol_index] in alphabet.upper() and formula[symbol_index+1] in alphabet.upper():
             return False
+
     return True
 
 
@@ -50,8 +51,9 @@ def is_correct_operator(formula:str)->bool:
         if formula[index] == '!':
             if formula[index - 1] != '(':
                 return False
-    if '\\' in new_formula or '/' in new_formula:
-        # print('here')
+    if len(formula) == 1:
+        return True
+    elif '\\' in new_formula or '/' in new_formula:
         return False
     else:
         return True
@@ -207,11 +209,18 @@ def is_logical_formula(formula: str)->bool:
     """
     Проверяет, правильно ли введена формула
     """
-    if is_correct_formula(formula) and brackets_count(formula) and is_correct_operator(formula) and ' ' not in formula and symbol_is_not_alone_in_brackets(formula):
-        formula = formula.replace('\/', 'v').replace('/\\', '^').replace('->', '>')
-        # print(formula)
-        pdnf = build_pdnf(formula)
-        return pdnf
+    if is_correct_formula(formula) and brackets_count(formula) and is_correct_operator(formula) and ' ' not in formula:
+        if len(formula) != 1:
+            if symbol_is_not_alone_in_brackets(formula):
+                formula = formula.replace('\/', 'v').replace('/\\', '^').replace('->', '>')
+                # print(formula)
+                pdnf = build_pdnf(formula)
+                return pdnf
+        else:
+            formula = formula.replace('\/', 'v').replace('/\\', '^').replace('->', '>')
+            # print(formula)
+            pdnf = build_pdnf(formula)
+            return pdnf
 
     else:
         print('Ошибка ввода формулы\n')
@@ -263,8 +272,10 @@ if __name__ == '__main__':
     # print(is_logical_formula(formula))
     try:
         sdnf = is_logical_formula(formula)
+
         if sdnf:
             print('Полученная СДНФ формула:', sdnf)
             print(compare(sdnf, formula))
     except:
+        print('Возникла ошибка')
         raise SystemExit
