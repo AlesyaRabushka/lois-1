@@ -1,26 +1,25 @@
 # Лабораторная работа №1 по дисциплине "Логические основы интеллектуальных систем"
 # выполнена студентом группы 021703 БГУИР Рабушка Алеся Александровна
-#
-#
+# Файл с описанием модуля парсера сокращённого языка логики высказываний
+# 06.03.2023
 
 
 
 
-# латинская заглавная
 def is_correct_formula(formula: str) -> bool:
     """
     Проверяет наличие недопустимых символов
     """
     latin_alphabet = 'abcdeffghijklmnopqrstuvwxxyz'
     if len(formula) == 1:
-        if formula in latin_alphabet.upper():
+        if formula in latin_alphabet.upper() or formula in '01':
             return True
         else:
             return False
     else:
         flag = False
         for symbol in formula:
-            if symbol in '{}_=<@#$%^&*.,?|+0123456789':
+            if symbol in '{}_=<@#$%^&*.,?|+23456789':
                 return False
             if symbol in latin_alphabet:
                 return False
@@ -33,19 +32,26 @@ def symbol_is_not_alone_in_brackets(formula: str) -> bool:
     """
     Проевряет, что атомарная формула указана без скобок
     """
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'
     for symbol_index in range(0, len(formula)):
         if formula[symbol_index] == '(' and is_correct_formula(formula[symbol_index + 1]) and formula[symbol_index + 2] == ')':
+            return False
+        elif formula[symbol_index] in alphabet.upper() and formula[symbol_index+1] in alphabet.upper():
             return False
     return True
 
 
 def is_correct_operator(formula:str)->bool:
     """
-    Проверяет, верно ли ввелены все бинарные операторы
+    Проверяет, верно ли введены все бинарные операторы
     """
     new_formula = formula.replace('\/', 'v').replace('/\\', '^')
+    for index in range(len(formula)):
+        if formula[index] == '!':
+            if formula[index - 1] != '(':
+                return False
     if '\\' in new_formula or '/' in new_formula:
-        print('here')
+        # print('here')
         return False
     else:
         return True
@@ -75,9 +81,12 @@ def brackets_count(formula:str) -> bool:
             left_bracket_count += 1
         elif i == ')':
             right_bracket_count += 1;
-    if left_bracket_count == right_bracket_count:
+
+    if left_bracket_count == 0 and right_bracket_count == 0 and len(formula) == 1:
         return True
-    elif left_bracket_count == 0 or right_bracket_count == 0 and len(formula) == 1:
+    elif left_bracket_count == 0 and right_bracket_count == 0 and len(formula) != 1:
+        return False
+    elif left_bracket_count == right_bracket_count:
         return True
     else:
         return False
@@ -225,8 +234,9 @@ def compare(sdnf, formula):
     formula_symbols = []
     for expression in formula_expressions:
         formula_symbols.append(expression.split('^'))
-    # print(formula_symbols)
 
+    if len(formula_symbols) != len(sdnf_symbols):
+        return 'Формула не является СДНФ'
     # [item in b for item in a]
     compare_list = []
     for sdnf_pare in sdnf_symbols:
@@ -234,6 +244,8 @@ def compare(sdnf, formula):
             for item in sdnf_pare:
                 if item in formula_pare:
                     compare_list.append(True)
+
+    # print(compare_list)
 
     if False in compare_list:
         return 'Формула не является СДНФ'
@@ -251,7 +263,8 @@ if __name__ == '__main__':
     # print(is_logical_formula(formula))
     try:
         sdnf = is_logical_formula(formula)
-        print('Полученная СДНФ формула:', sdnf)
-        print(compare(sdnf, formula))
+        if sdnf:
+            print('Полученная СДНФ формула:', sdnf)
+            print(compare(sdnf, formula))
     except:
         raise SystemExit
