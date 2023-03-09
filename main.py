@@ -60,17 +60,6 @@ def is_correct_operator(formula:str)->bool:
 
 
 
-# ( ! formula )
-def is_unary_complex_formula(formula: str) -> bool:
-    """
-    Проверяет, что формула является унарной сложной формулой
-    """
-    if formula[0] == '(' and formula[len(formula)-1] == ')' and formula[1] == '!':
-        if is_formula(formula[2:len(formula)-1]):
-            return True
-    else:
-        return False
-
 def brackets_count(formula:str) -> bool:
     """
     Проверяет, что количество открывающихся круглых скобок равно количеству закрывающихся
@@ -158,12 +147,32 @@ def modify_formula(formula:str)->str:
 
     return new_formula, vars
 
+def alphabet_symbols_count(formula:str)->int:
+    """
+    Метод считает количество символов, принадлежащих алфавиту
+    :param formula:
+    :return:
+    """
+    alphabet = 'abcdeffghijklmnopqrstuvwxxyz01'
+    count = 0
+    for symbol in formula:
+        if symbol in alphabet.upper():
+            count += 1
+    return count
 
 
 def build_pdnf(formula:str):
+    """
+    Построение СДНФ в соответствии с таблицей истиности
+    :param formula:
+    :return:
+    """
     formula, vars = modify_formula(formula)
     truth_table, truth_table_result = build_truth_table(formula, vars)
-    pdnf_formula = '('
+
+    pdnf_formula = ''
+    if alphabet_symbols_count(formula) != 1:
+        pdnf_formula += '('
     pdnf_formulas_list = []
     truth_table_pdnf = []
 
@@ -187,17 +196,23 @@ def build_pdnf(formula:str):
 
     for expression in pdnf_formulas_list:
         if pdnf_formulas_list.index(expression) == len(pdnf_formulas_list)-1:
-            for value in expression:
-                if expression.index(value) == len(expression)-1:
-                    pdnf_formula += f'{value}))'
-                else:
-                    pdnf_formula += f'({value}/\\'
+            if len(expression) == 1:
+                pdnf_formula += f'{expression[0]}'
+            else:
+                for value in expression:
+                    if expression.index(value) == len(expression)-1:
+                        pdnf_formula += f'{value})'
+                    else:
+                        pdnf_formula += f'({value}/\\'
         else:
             for value in expression:
                 if expression.index(value) == len(expression)-1:
                     pdnf_formula += f'{value})\/'
                 else:
                     pdnf_formula += f'({value}/\\'
+
+    if not brackets_count(pdnf_formula):
+        pdnf_formula += ')'
 
     return pdnf_formula
 
@@ -243,20 +258,25 @@ def compare(sdnf, formula):
     formula_symbols = []
     for expression in formula_expressions:
         formula_symbols.append(expression.split('^'))
+    # print(formula_symbols)
 
     if len(formula_symbols) != len(sdnf_symbols):
         return 'Формула не является СДНФ'
     # [item in b for item in a]
     compare_list = []
-    for sdnf_pare in sdnf_symbols:
-        for formula_pare in formula_symbols:
-            for item in sdnf_pare:
-                if item in formula_pare:
-                    compare_list.append(True)
+    for item1 in sdnf_symbols:
+        for item2 in formula_symbols:
+            if set(item1) == set(item2):
+                compare_list.append(True)
+
+    # for sdnf_pare in sdnf_symbols:
+    #     for formula_pare in formula_symbols:
+    #         if sdnf_pare[0] in formula_pare and sdnf_pare[1] in formula_pare:
+    #             compare_list.append(True)
 
     # print(compare_list)
 
-    if False in compare_list:
+    if False in compare_list or len(compare_list) == 0:
         return 'Формула не является СДНФ'
     else:
         return 'Формула является СДНФ'
@@ -272,7 +292,6 @@ if __name__ == '__main__':
     # print(is_logical_formula(formula))
     try:
         sdnf = is_logical_formula(formula)
-
         if sdnf:
             print('Полученная СДНФ формула:', sdnf)
             print(compare(sdnf, formula))
